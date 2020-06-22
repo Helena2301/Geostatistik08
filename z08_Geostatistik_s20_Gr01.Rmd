@@ -91,9 +91,12 @@ Roughness: Differenz von Maximum- und Minimumwert einer Zelle und der 8 umgebene
 
 Flow Direction: Fließrichtung von Wasser, bzw. wo dieses sich sammeln würde.
 
-Konvergenz-/Divergenz-Index
+(R Hilfe)
 
-Saga Wetness-Index
+Konvergenz-/Divergenz-Index: Konvergenz=Akkumulation; Divergenz=Massenverlust
+(https://www.dwd.de/DE/service/lexikon/begriffe/K/Konvergenz_pdf.pdf;jsessionid=3F8CFF3ED165DFF573967CF298D55D9B.live11053?__blob=publicationFile&v=3)
+
+Saga Wetness-Index: Dem Topographic Wetness Index ähnlich, berechnet aber nicht von einem "Film" aus Wasser ausgehend, sodass das Ergebnis näher an der Realität liegt. (http://www.saga-gis.org/saga_tool_doc/2.2.2/ta_hydrology_15.html)
 
 ## Aufgabe 19 Räumlich verschneiden
 a) Für die folgenden Arbeiten ist es für Sie von Interesse, welche Wertausprägungen die Reliefparameter an den Beprobungstandorten annehmen. Fügen Sie entsprechend die Werte der jeweiligen Zellen des Raster-Stacks der Tabelle des SpatialPointsDataFrames hinzu. Suchen Sie in der Hilfe des „raster“ Paketes nach einer entsprechenden Funktion. (2 Punkte)
