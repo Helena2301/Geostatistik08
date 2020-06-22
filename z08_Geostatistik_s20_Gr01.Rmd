@@ -1,0 +1,119 @@
+---
+title: "Aufgabe 08"
+author: "Gruppe 01"
+date: "16 6 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Aufgabe 17 Rasterimport
+a) Für die heutige Sitzung steht Ihnen eine gezippte Datei zur Verfügung. Nutzen Sie R, um die Datei „data.zip“ zu entpacken. Im Anschluss können Sie mit den enthaltenen Daten weiterarbeiten. (1 Punkt)
+```{r Aufgabe 17a}
+#Neuer Ziel-Ordner 
+if (!dir.exists("data2")) dir.create("data2")
+#zip-Ordner entpacken
+unzip(zipfile = "data.zip",
+      exdir = "data2")
+
+library(tidyverse)
+load("data2/yingtan_20_ueb3.RData")
+```
+
+b) Für das von Ihnen untersuchte Gebiet liegt Ihnen ein Höhenmodell als ASCII Datei vor. Für weitere Analysen wollen Sie dieses nun in R einlesen. Machen Sie sich also mit dem „raster“ Paket vertraut und lesen Sie mit der entsprechenden Funktion die Datei „yingtan_elevation.asc“ in Ihre Arbeitsumgebung ein und vergeben Sie das passende geographische Referenzsystem. (1 Punkt)
+```{r Aufgabe 17b}
+library(sp)
+library(raster)
+elev <- raster("data2/yingtan_elevation.asc",
+               crs = "+proj=utm +zone=50 +ellps=WGS84 +datum=WGS84")
+
+plot(elev)
+```
+
+## Aufgabe 18 Reliefparameter
+a) Ihre nächste Aufgabe ist es, aus dem Höhenmodell die bekannten Reliefparameter Hangneigung, Hangneigungsrichtung, Terrain Ruggedness Index, Topographic Position Index, Roughness und die Flow Direction abzuleiten. Nutzen Sie dazu die entsprechende Funktion des „raster“ Paketes. Begründen Sie die Wahl der Anzahl berücksichtigter Nachbarn. (2 Punkte)
+```{r Aufgabe 18a}
+#Hangneigung = slope; Hangneigungsrichtung = aspect; 
+#Terrain Ruggedness Index = TRI; Topographic Position Index = TPI,
+#Roughness = roughness; Flow Direction = flowdir
+
+relief <- terrain(elev,
+                  opt = c("slope", "aspect", 
+                          "TRI", "TPI", 
+                          "roughness", "flowdir"),
+                  neighbors = 8)
+
+summary(relief)
+```
+Der Parameter neighbors wurde auf 8 gesetzt. Damit werden jeweils 8 benachbarte Zellen nach Horn (1981) in die Rechnung mit einbezogen. Laut Hilfe von RStudio eignet sich diese Berechnung am besten für raue Oberflächen.
+
+b) Unvermittelt teilt Ihr Kollege Ihnen mit, dass er soeben den Konvergenz-/Divergenz-Index (convg.csv) sowie den Saga Wetness-Index (swi.csv) in SAGA berechnet hat. Er gibt Ihnen die Raster als XYZ Datei im .csv Format. Lesen Sie diese ebenfalls in Ihre Arbeitsumgebung ein, wandeln Sie diese in „raster“ um und verbinden Sie alle Reliefparameter inklusive des Höhenmodells in einem RasterStack. Beschreiben Sie den Unterschied zwischen einem RasterStack und einem RasterBrick in knappen Worten. (2 Punkte)
+```{r Aufgabe 18b}
+#Daten einlesen
+convg <- read.csv("data2/convg.csv",
+                  sep = ";",
+                  header = TRUE)
+rconvg <- rasterFromXYZ(convg,
+                        crs = "+proj=utm +zone=50 +ellps=WGS84 +datum=WGS84")
+
+swi <- read.csv("data2/swi.csv",
+                sep = ";",
+                header = TRUE)
+rswi <- rasterFromXYZ(swi,
+                      crs = "+proj=utm +zone=50 +ellps=WGS84 +datum=WGS84")
+
+#Erstellen des Rasterstacks
+reliefp <- stack(relief, rconvg, rswi)
+
+```
+Unterschied Rasterstack und Rasterbrick: Beides fasst verschiedene Rasterlayer in einem Raster zusammen. Während die einzelnen Layer für das Rasterbrick aus einer gemeinsamen Datei stammen müssen, können in einem Rasterstack verschiedene Layer aus verschiedenen Dateien zusammengefasst werden. (https://rspatial.org/raster/spatial/4-rasterdata.html)
+
+c) Ihnen fällt auf, dass Sie den Stack in weiser Voraussicht auf den kommenden Übungszettel zusätzlich in das Ihnen länger bekannten SpatialGridDataFrame Format überführen wollen. Erzeugen Sie entsprechend eine Variable diesen Dateityps aus dem soeben erzeugten RasterStack. (1 Punkt)
+```{r Aufgabe 19c}
+#SpatialGridDataFrame aus Rasterstack
+SGDFrelief <- as(reliefp, "SpatialGridDataFrame")
+
+```
+
+d) Machen Sie sich nun mit den Reliefparametern vertraut. Beschreiben Sie jeden Parameter kurz. (1 Punkt)
+
+Hangneigung: Steigung der Oberfläche.
+
+Hangneigungsrichtung: Beschreibt in welche Richtung der Hang geneigt ist.
+
+Terrain Ruggedness Index: Mittelwert der absoluten Differenzen zwischen einer Zelle und der 8 umgebenen Zellen.
+
+Topographic Position Index: Differenz zwischen dem Wert einer Zelle und der 8 umgebenen Zellen.
+
+Roughness: Differenz von Maximum- und Minimumwert einer Zelle und der 8 umgebenen Zellen.
+
+Flow Direction: Fließrichtung von Wasser, bzw. wo dieses sich sammeln würde.
+
+Konvergenz-/Divergenz-Index
+
+Saga Wetness-Index
+
+## Aufgabe 19 Räumlich verschneiden
+a) Für die folgenden Arbeiten ist es für Sie von Interesse, welche Wertausprägungen die Reliefparameter an den Beprobungstandorten annehmen. Fügen Sie entsprechend die Werte der jeweiligen Zellen des Raster-Stacks der Tabelle des SpatialPointsDataFrames hinzu. Suchen Sie in der Hilfe des „raster“ Paketes nach einer entsprechenden Funktion. (2 Punkte)
+```{r Aufgabe 19a}
+#SpatialPointsDataFrame
+SPDFljz <- ljz
+coordinates(SPDFljz) <- ~ EAST + NORTH
+proj4string(SPDFljz) <- CRS("+proj=utm +zone=50 +ellps=WGS84 +datum=WGS84")
+
+#Rasterstack und SpatialPointsDataFrame zusammen
+rljz <- merge(SGDFrelief, ljz,
+              by.x = x,
+              by.y = "EAST")
+```
+
+b) Erzeugen Sie zu guter Letzt einen anschaulichen Plot, der die Lage der Punkte vor dem Höhenmodell zeigt. (1 Punkt)
+```{r Aufgabe 19b}
+library(lattice)
+plot(reliefp$slope)
+spplot(SGDFrelief)
+spplot(reliefp, "roughness")
+```
+
